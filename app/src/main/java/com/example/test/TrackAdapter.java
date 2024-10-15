@@ -1,6 +1,7 @@
 package com.example.test;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,16 +14,20 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-import okhttp3.Call;
-
 public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackViewHolder> {
 
     private final Context context;
     private final List<Track> trackList;
+    private final OnTrackClickListener listener;
 
-    public TrackAdapter(Context context, List<Track> trackList) {
+    public interface OnTrackClickListener {
+        void onTrackClick(Track track);
+    }
+
+    public TrackAdapter(Context context, List<Track> trackList, OnTrackClickListener listener) {
         this.context = context;
         this.trackList = trackList;
+        this.listener = listener;
     }
 
     @NonNull
@@ -38,16 +43,28 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackViewHol
 
         holder.trackTitle.setText(track.getTitle());
         holder.trackDescription.setText(track.getDescription());
+        //String artworkUrl = track.getArtworkUrl();
 
-        // Загружаем изображение трека с помощью Picasso
-        Picasso.get().load(track.getArtworkUrl()).into(holder.trackImage);
+        Log.d("PicassoLoader", "Loading artwork from: " + track.getArtworkUrl());
+        //Picasso.get().load(track.getArtworkUrl()).into(holder.trackImage);
+
+
+        // Если artworkUrl равен null, устанавливаем изображение-заглушку
+        if (track.getArtworkUrl() != null && !track.getArtworkUrl().isEmpty()) {
+            Picasso.get().load(track.getArtworkUrl()).into(holder.trackImage);
+        } else {
+            holder.trackImage.setImageResource(R.drawable.placeholder_image);  // Заглушка
+        }
+
+
+        // Обработка клика по треку
+        holder.itemView.setOnClickListener(v -> listener.onTrackClick(track));
     }
 
     @Override
     public int getItemCount() {
         return trackList.size();
     }
-
 
     public static class TrackViewHolder extends RecyclerView.ViewHolder {
         ImageView trackImage;
@@ -63,5 +80,3 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackViewHol
         }
     }
 }
-
-
