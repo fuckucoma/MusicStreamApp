@@ -1,8 +1,11 @@
 package com.example.test;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.List;
 
 public class TrackResponse {
+    @SerializedName("data")
     private List<Data> data;
 
     public List<Data> getData() {
@@ -10,9 +13,16 @@ public class TrackResponse {
     }
 
     public static class Data {
+        @SerializedName("title")
         private String title;
+
+        @SerializedName("description")
         private String description;
+
+        @SerializedName("artwork")
         private Artwork artwork;
+
+        @SerializedName("id")
         private String id;
 
         public String getTitle() {
@@ -31,32 +41,27 @@ public class TrackResponse {
             return id;
         }
 
-        public class Artwork {
-            private String _150x150;
-            private String _480x480;
-            private String _1000x1000;
+        public static class Artwork {
+            @SerializedName("150x150")
+            private String size150x150;
 
-            public Artwork(String _150x150, String _480x480, String _1000x1000) {
-                this._150x150 = _150x150;
-                this._480x480 = _480x480;
-                this._1000x1000 = _1000x1000;
-            }
+            @SerializedName("480x480")
+            private String size480x480;
+
+            @SerializedName("1000x1000")
+            private String size1000x1000;
 
             public String get150x150() {
-                return _150x150;
+                return size150x150;
             }
 
             public String get480x480() {
-                return _480x480;
+                return size480x480;
             }
 
             public String get1000x1000() {
-                return _1000x1000;
+                return size1000x1000;
             }
-
-
         }
-
     }
 }
-

@@ -3,8 +3,8 @@ package com.example.test;
 import android.annotation.SuppressLint;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.util.Log;
-import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,7 +16,6 @@ import com.google.android.exoplayer2.MediaItem;
 import com.google.gson.Gson;
 
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,10 +25,11 @@ import okhttp3.Response;
 
 public class AudioPlayerActivity extends AppCompatActivity {
 
-    private ExoPlayer player;
+    private ExoPlayer exoPlayer;
     private RecyclerView recyclerView;
     private TrackAdapter trackAdapter;
     private final List<Track> trackList = new ArrayList<>();
+    private int playingPosition = -1;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -37,25 +37,42 @@ public class AudioPlayerActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.audioplayer_activity);
 
-        // Инициализация кнопок
-        Button playButton = findViewById(R.id.btn_play);
-        Button stopButton = findViewById(R.id.btn_stop);
-        Button pauseButton = findViewById(R.id.btn_pause);
-
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Инициализация плеера
-        player = new ExoPlayer.Builder(this).build();
+        // Инициализация ExoPlayer
+        exoPlayer = new ExoPlayer.Builder(this).build();
 
-        // Запуск потока для получения треков из Audius API
+        // Получаем треки из API
+        fetchTracks();
+
+        // Добавляем обработку скроллинга для остановки проигрывания треков, выходящих из видимости
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @SuppressLint("NotifyDataSetChanged")
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
+                int lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition();
+
+                // Проверяем, если трек больше не виден, останавливаем его проигрывание
+                if (playingPosition != -1 && (playingPosition < firstVisibleItemPosition || playingPosition > lastVisibleItemPosition)) {
+                    exoPlayer.stop();
+                    playingPosition = -1;
+                    trackAdapter.notifyDataSetChanged();
+                }
+            }
+        });
+    }
+
+    // Получение треков из Audius API
+    private void fetchTracks() {
         new Thread(() -> {
             OkHttpClient client = new OkHttpClient();
-
-            String url = "https://discoveryprovider.audius.co/v1/tracks/trending?limit=10";  // API Audius для популярных треков
-            Request request = new Request.Builder()
-                    .url(url)
-                    .build();
+            String url = "https://discoveryprovider.audius.co/v1/tracks/trending?limit=10";  // API Audius
+            Request request = new Request.Builder().url(url).build();
 
             try (Response response = client.newCall(request).execute()) {
                 String responseBody = response.body().string();
@@ -67,26 +84,23 @@ public class AudioPlayerActivity extends AppCompatActivity {
                     Gson gson = new Gson();
                     TrackResponse trackResponse = gson.fromJson(responseBody, TrackResponse.class);
 
-                    // Заполняем список треков
                     runOnUiThread(() -> {
                         for (TrackResponse.Data data : trackResponse.getData()) {
-
+                            // Проверяем наличие artwork и его URL
                             String artworkUrl = null;
-                            if (data.getArtwork() != null && data.getArtwork().get480x480() != null) {
-                                artworkUrl = data.getArtwork().get480x480();  // Получаем URL, если доступен
+                            if (data.getArtwork() != null) {
+                                artworkUrl = data.getArtwork().get480x480();  // Получаем URL, если он доступен
                             }
-                            // Логируем URL обложки
-                            Log.d("TrackArtwork", "Artwork URL: " + artworkUrl);
 
-
-
-                            trackList.add(new Track(data.getTitle(), data.getDescription(), data.getArtwork().get480x480(), data.getId()));
+                            // Добавляем трек в список с проверенным значением artworkUrl
+                            trackList.add(new Track(data.getTitle(), data.getDescription(), artworkUrl, data.getId()));
                         }
-                        // Устанавливаем адаптер
+
+                        // Инициализация адаптера
                         trackAdapter = new TrackAdapter(AudioPlayerActivity.this, trackList, track -> {
-                            // Обработка клика на элемент трека
+                            // Обработка клика по треку
                             String trackUrl = getTrackStreamUrl(track.getTrackId());
-                            playTrack(trackUrl); // Проигрываем трек
+                            playTrack(trackUrl, trackList.indexOf(track));  // Проигрываем трек
                         });
                         recyclerView.setAdapter(trackAdapter);
                     });
@@ -98,17 +112,18 @@ public class AudioPlayerActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }).start();
-
     }
 
     // Проигрывание трека
-    private void playTrack(String trackUrl) {
-        player.setMediaItem(MediaItem.fromUri(Uri.parse(trackUrl)));
-        player.prepare();
-        player.play();
+    private void playTrack(String trackUrl, int position) {
+        exoPlayer.setMediaItem(MediaItem.fromUri(Uri.parse(trackUrl)));
+        exoPlayer.prepare();
+        exoPlayer.play();
+        playingPosition = position;
+        trackAdapter.notifyDataSetChanged();
     }
 
-    // Метод для получения стрим-URL трека
+    // Получение URL для стриминга трека
     private String getTrackStreamUrl(String trackId) {
         return "https://discoveryprovider.audius.co/v1/tracks/" + trackId + "/stream";
     }
@@ -116,6 +131,10 @@ public class AudioPlayerActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        player.release();
+        exoPlayer.release();
+    }
+
+    public int getPlayingPosition() {
+        return playingPosition;
     }
 }

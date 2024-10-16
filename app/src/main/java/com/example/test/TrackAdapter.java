@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -43,19 +44,22 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackViewHol
 
         holder.trackTitle.setText(track.getTitle());
         holder.trackDescription.setText(track.getDescription());
-        //String artworkUrl = track.getArtworkUrl();
 
         Log.d("PicassoLoader", "Loading artwork from: " + track.getArtworkUrl());
-        //Picasso.get().load(track.getArtworkUrl()).into(holder.trackImage);
 
-
-        // Если artworkUrl равен null, устанавливаем изображение-заглушку
+        // Загрузка изображения или заглушка
         if (track.getArtworkUrl() != null && !track.getArtworkUrl().isEmpty()) {
             Picasso.get().load(track.getArtworkUrl()).into(holder.trackImage);
         } else {
-            holder.trackImage.setImageResource(R.drawable.placeholder_image);  // Заглушка
+            holder.trackImage.setImageResource(R.drawable.placeholder_image);
         }
 
+        // Выделяем проигрываемый трек (например, меняем фон)
+        if (position == ((AudioPlayerActivity) context).getPlayingPosition()) {
+            holder.itemView.setBackgroundColor(context.getResources().getColor(R.color.colorPlaying)); // Фон для текущего трека
+        } else {
+            holder.itemView.setBackgroundColor(context.getResources().getColor(android.R.color.transparent)); // Обычный фон
+        }
 
         // Обработка клика по треку
         holder.itemView.setOnClickListener(v -> listener.onTrackClick(track));
@@ -73,7 +77,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackViewHol
 
         public TrackViewHolder(@NonNull View itemView) {
             super(itemView);
-
             trackImage = itemView.findViewById(R.id.track_image);
             trackTitle = itemView.findViewById(R.id.track_title);
             trackDescription = itemView.findViewById(R.id.track_description);
