@@ -82,4 +82,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.TrackViewHol
             trackDescription = itemView.findViewById(R.id.track_description);
         }
     }
+
+
 }
