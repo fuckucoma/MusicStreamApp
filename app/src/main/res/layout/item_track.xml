@@ -6,10 +6,10 @@
 
     <ImageView
         android:id="@+id/track_image"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:scaleType="centerCrop"
-        android:layout_gravity="center_horizontal" />
+        android:layout_gravity="left" />
 
     <TextView
         android:id="@+id/track_title"
@@ -26,9 +26,38 @@
         android:text="Artist Name"
         android:textSize="16sp" />
 
+    <TextView
+        android:id="@+id/current_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0:00"
+        android:padding="4dp" />
+
+    <!-- Полоса прогресса трека -->
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/total_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0:00"
+        android:padding="4dp" />
+
+    <!-- Кнопка для проигрывания и паузы -->
+    <ImageButton
+        android:id="@+id/playPauseButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_play" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+
 
 </LinearLayout>

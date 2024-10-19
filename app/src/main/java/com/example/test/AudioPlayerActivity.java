@@ -1,9 +1,14 @@
 package com.example.test;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,6 +16,7 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.gson.Gson;
 
 import java.io.IOException;
@@ -29,7 +35,7 @@ public class AudioPlayerActivity extends AppCompatActivity {
     private final List<Track> trackList = new ArrayList<>();
     private int playingPosition = -1;
 
-    @SuppressLint("MissingInflatedId")
+    @SuppressLint({"MissingInflatedId", "NonConstantResourceId"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,7 +46,23 @@ public class AudioPlayerActivity extends AppCompatActivity {
         // Инициализация ExoPlayer
         exoPlayer = new ExoPlayer.Builder(this).build();
 
-        // Получаем треки из API
+
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            if (item.getItemId()== R.id.navigation_home) {
+                    startActivity(new Intent(AudioPlayerActivity.this, AudioPlayerActivity.class));
+            }
+            else if (item.getItemId()== R.id.navigation_search){
+                    startActivity(new Intent(AudioPlayerActivity.this, SearchActivity.class));
+            }
+            else if (item.getItemId()== R.id.navigation_library){
+                    startActivity(new Intent(AudioPlayerActivity.this, LibraryActivity.class));
+            }
+            return true;
+        });
+
+
         fetchTracks();
 
         // Добавляем слушатель для смены страницы и воспроизведения трека
@@ -81,8 +103,8 @@ public class AudioPlayerActivity extends AppCompatActivity {
 
                         trackAdapter = new TrackAdapter(AudioPlayerActivity.this, trackList, track -> {
                             String trackUrl = getTrackStreamUrl(track.getTrackId());
-                            playTrack(trackUrl); // Проигрываем трек
-                        });
+                            playTrack(trackUrl);  // Проигрываем трек
+                        }, exoPlayer);
                         viewPager.setAdapter(trackAdapter);
                     });
                 } else {
